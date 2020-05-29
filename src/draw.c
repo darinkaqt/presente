@@ -67,9 +67,39 @@ void draw_state(const level *lvl, const state *sta){
         // Initialize a Vector2 that represents the center of the entity position
         Vector2 vec = {ent.x,ent.y};
         // Draw a circle with the radius of the entity
-        DrawCircleV(vec,ent.rad,PINK);
+
+        // draw gun bullets
+        if(sta->bullets[i].weapon==0) DrawCircleV(vec,ent.rad,PINK);
+        if(sta->bullets[i].weapon==1) DrawCircleV(vec,ent.rad,GREEN);
+        if(sta->bullets[i].weapon==2){
+            if(sta->bullets[i].cooldown_range>=0){
+                DrawCircleV(vec,ent.rad+5,RED);
+                DrawCircleV(vec,ent.rad,BLACK);
+            }
+            else{
+                DrawCircleV(vec,ent.rad,RED);
+                DrawCircleV(vec,ent.rad-5,YELLOW);
+            }
+        }
+        if(sta->bullets[i].weapon==3) {
+            if(sta->bullets[i].cooldown_range>=0){
+                DrawPoly(vec, 5, 15, 1.8, BLACK);
+                DrawPoly(vec, 5, 8, 1.8, PURPLE);
+                DrawPoly(vec, 5, 6, 1.8, BLACK);
+            }
+            else{
+                DrawCircleV(vec,ent.rad,ORANGE);
+                DrawCircleV(vec,ent.rad-5,YELLOW);
+            }
+        }
     }
 
     // Stop drawing relative to the camera
     EndMode2D();
 }
+
+/*void draw_bomb(const entity *ent){
+    Vector2 vec = {ent->x,ent->y};
+    DrawCircleV(vec,ent->rad+5,RED);
+    DrawCircleV(vec,ent->rad,BLACK);
+}*/

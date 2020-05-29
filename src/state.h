@@ -17,6 +17,15 @@
 #define BULLET_SPEED 16
 #define BULLET_RAD   5
 
+//pump data
+#define BOMB_DMG 12                         
+#define BOMB_SPEED 5
+#define BOMB_RAD   10
+#define BOMB_RAD_EXP   70
+#define BOMB_COOLDOWN_RANGE 60
+#define BOMB_COOLDOWN_DRAW 60
+
+#define M_PI 3.14159265358979323846
 
 // ==== PLAYER DEFINITION
 typedef struct {
@@ -37,6 +46,9 @@ typedef struct {
 
 typedef struct {
     entity ent;
+    int cooldown_range;         //cooldown to give bullets time
+    int cooldown_draw;          //cooldown to give bullets time 
+    int weapon;                 //type of weapons
     // TODO: We may want to add more fields...
 } bullet;
 
@@ -45,7 +57,7 @@ typedef struct {
 #define MAX_ENEMIES 128
 #define MAX_BULLETS 128
 
-#define N_BUTTONS 5
+#define N_BUTTONS 6             //new button
 
 // A state represents everything that's happening with the game objects at a given time.
 typedef struct {
@@ -70,7 +82,7 @@ typedef struct {
 state *state_new();
 
 // Updates the state of the game to the next frame.
-void state_update(level *lvl, state *sta);
+void state_update(level *lvl, state *sta, int *weapon);
 
 // Put enemies at random in the state until it has n_enemies enemies.
 void state_populate_random(level *lvl, state *sta, int n_enemies);

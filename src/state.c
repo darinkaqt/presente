@@ -24,7 +24,7 @@ state *state_new(){
     return sta;
 }
 
-void state_update(level *lvl, state *sta){
+void state_update(level *lvl, state *sta, int *weapon){
 
     // == Update player speed according to buttons
     // (mov_x,mov_y) is a vector that represents the position of the analog control
@@ -49,37 +49,142 @@ void state_update(level *lvl, state *sta){
     // == Make the player shoot
     // Lower the player's cooldown by 1
     sta->pla.cooldown -= 1;
+
+    //reduce cooldown
+    for(int i=0;i<sta->n_bullets;i++){
+        if(sta->bullets[i].weapon == 2){
+            sta->bullets[i].cooldown_range -= 1;
+            if(sta->bullets[i].cooldown_range > BOMB_COOLDOWN_RANGE/2){
+                sta->bullets[i].ent.rad = 1+sta->bullets[i].ent.rad;
+            }
+            else{
+                sta->bullets[i].ent.rad = sta->bullets[i].ent.rad-1;
+            }
+        }
+        else if(sta->bullets[i].weapon == 3){
+            sta->bullets[i].cooldown_range -= 1;
+        }
+    }
+
+    //change of weapon
+      if(sta->button_state[5] && sta->pla.cooldown<=0){
+        sta->pla.cooldown = PLAYER_COOLDOWN;
+        *weapon += 1;
+        *weapon = (*weapon)%4; 
+    }
+
     // If the shoot button is pressed and the player cooldown is smaller than 0, shoot a bullet
     if(sta->button_state[4] && sta->pla.cooldown<=0 && !sta->pla.ent.dead){
         // Reset the player cooldown to a positive value so that he can't shoot for that amount of frames
         sta->pla.cooldown = PLAYER_COOLDOWN;
         // Ensure that the new bullet won't be created if that would overflow the bullets array
         if(sta->n_bullets<MAX_BULLETS){
-            // The new bullet will be in the next unused position of the bullets array
-            bullet *new_bullet = &sta->bullets[sta->n_bullets];
-            sta->n_bullets += 1;
-            // Initialize all bullet fields to 0
-            memset(new_bullet,0,sizeof(bullet));
-            // Start the bullet on the player's position
-            new_bullet->ent.x      = sta->pla.ent.x;
-            new_bullet->ent.y      = sta->pla.ent.y;
-            // Bullet speed is set to the aiming angle
-            new_bullet->ent.vx     =  BULLET_SPEED*cos(sta->aim_angle);
-            new_bullet->ent.vy     = -BULLET_SPEED*sin(sta->aim_angle);
-            //
-            new_bullet->ent.rad    = BULLET_RAD;
-            new_bullet->ent.hp     = BULLET_DMG;
+            // weapon 0 and 1
+            if(*weapon == 0 || *weapon == 1){
+                // The new bullet will be in the next unused position of the bullets array
+                bullet *new_bullet = &sta->bullets[sta->n_bullets];
+                sta->n_bullets += 1;
+                // Initialize all bullet fields to 0
+                memset(new_bullet,0,sizeof(bullet));
+                new_bullet->weapon = *weapon;
+                // Start the bullet on the player's position
+                new_bullet->ent.x      = sta->pla.ent.x;                                        //POSICIÓN DE LA BALA COMIENZA EN LA POS X DEL PLAYER
+                new_bullet->ent.y      = sta->pla.ent.y;                                        //POSICION DE LA BALA COMIENZA EN LA POS Y DEL PLAYER
+                // Bullet speed is set to the aiming angle
+                new_bullet->ent.vx     =  BULLET_SPEED*cos(sta->aim_angle);                     //VELOCIDAD EN LA QUE SALE LA BALA EN DIRECCION X
+                new_bullet->ent.vy     = -BULLET_SPEED*sin(sta->aim_angle);                     //VELOCIDAD EN LA QUE SALE LA BALA EN DIRECCION Y 
+                //
+                new_bullet->ent.rad    = BULLET_RAD;
+                new_bullet->ent.hp     = BULLET_DMG;
+            }
+
+            // weapon 1 (two more bullets are added to weapon 1)
+            if(*weapon == 1){
+                //bullet_2
+                bullet *new_bullet_2 = &sta->bullets[sta->n_bullets];
+                sta->n_bullets += 1;
+                memset(new_bullet_2,0,sizeof(bullet));
+                new_bullet_2->ent.x      = sta->pla.ent.x; 
+                new_bullet_2->ent.y      = sta->pla.ent.y;
+                new_bullet_2->weapon     = *weapon;
+                new_bullet_2->ent.vx     =  BULLET_SPEED*cos((sta->aim_angle)+M_PI/4);                     
+                new_bullet_2->ent.vy     = -BULLET_SPEED*sin((sta->aim_angle)+M_PI/4);
+                new_bullet_2->ent.rad    = BULLET_RAD;
+                new_bullet_2->ent.hp     = BULLET_DMG;
+
+                //bullet_3
+                bullet *new_bullet_3 = &sta->bullets[sta->n_bullets];
+                sta->n_bullets += 1;
+                memset(new_bullet_3,0,sizeof(bullet));
+                new_bullet_3->ent.x      = sta->pla.ent.x; 
+                new_bullet_3->ent.y      = sta->pla.ent.y; 
+                new_bullet_3->weapon     = *weapon;
+                new_bullet_3->ent.vx     =  BULLET_SPEED*cos((sta->aim_angle)-M_PI/4);                     
+                new_bullet_3->ent.vy     = -BULLET_SPEED*sin((sta->aim_angle)-M_PI/4); 
+                new_bullet_3->ent.rad    = BULLET_RAD;
+                new_bullet_3->ent.hp     = BULLET_DMG;
+            }
+
+            // weapon 2
+            if (*weapon == 2){
+                bullet *new_bullet = &sta->bullets[sta->n_bullets];
+                sta->n_bullets += 1;
+                memset(new_bullet,0,sizeof(bullet));
+                new_bullet->ent.x      = sta->pla.ent.x;
+                new_bullet->ent.y      = sta->pla.ent.y;
+                new_bullet->weapon     = *weapon;
+                new_bullet->ent.vx     =  BOMB_SPEED*cos(sta->aim_angle);
+                new_bullet->ent.vy     = -BOMB_SPEED*sin(sta->aim_angle);
+                new_bullet->ent.hp     =  BOMB_DMG;
+                new_bullet->ent.rad    =  BOMB_RAD;
+                new_bullet->cooldown_range = BOMB_COOLDOWN_RANGE;
+                new_bullet->cooldown_draw = BOMB_COOLDOWN_DRAW;
+            }
+
+            // weapon 3
+            if (*weapon == 3){
+                bullet *new_bullet = &sta->bullets[sta->n_bullets];
+                sta->n_bullets += 1;
+                memset(new_bullet,0,sizeof(bullet));
+                new_bullet->ent.x      = sta->pla.ent.x;
+                new_bullet->ent.y      = sta->pla.ent.y;
+                new_bullet->weapon     = *weapon;
+                new_bullet->ent.vx     =  0;
+                new_bullet->ent.vy     =  0;
+                new_bullet->ent.hp     =  BOMB_DMG*2;
+                new_bullet->ent.rad    =  BOMB_RAD*1.5;
+                new_bullet->cooldown_range = BOMB_COOLDOWN_RANGE;
+                new_bullet->cooldown_draw = BOMB_COOLDOWN_DRAW;
+
+            }
         }
     }
-
-    // == Check bullet-enemy collisions
+    // == Check bullet-enemy collision
     for(int i=0;i<sta->n_bullets;i++){
-        for(int k=0;k<sta->n_enemies;k++){
-            // If a bullet is colliding with an enemy
-            if(entity_collision(&sta->bullets[i].ent,&sta->enemies[k].ent)){
-                // Reduce enemy's health by bullet's health and kill bullet
-                sta->enemies[k].ent.hp -= sta->bullets[i].ent.hp;
+        if((sta->bullets[i].weapon == 2 || sta->bullets[i].weapon == 3) && sta->bullets[i].cooldown_range<0){       //collision for weapon 2 and 3
+            if (sta->bullets[i].weapon == 2) sta->bullets[i].ent.rad = BOMB_RAD_EXP;
+            else if (sta->bullets[i].weapon == 3) sta->bullets[i].ent.rad = BOMB_RAD_EXP+10;
+            for(int k=0;k<sta->n_enemies;k++){
+            // If a enemy is inside the bomb's radius
+                if(entity_collision(&sta->bullets[i].ent,&sta->enemies[k].ent)){
+                    sta->enemies[k].ent.hp -= sta->bullets[i].ent.hp;
+                }
+            }
+            sta->bullets[i].ent.vx=0;
+            sta->bullets[i].ent.vy=0;
+            if(sta->bullets[i].cooldown_draw<0){            //weapon is removed when drawing ends
                 sta->bullets[i].ent.dead = 1;
+            }
+            sta->bullets[i].cooldown_draw -= 1;
+        }
+        else if(sta->bullets[i].weapon != 2 && sta->bullets[i].weapon != 3){
+            for(int k=0;k<sta->n_enemies;k++){
+            // If a bullet is colliding with an enemy
+                if(entity_collision(&sta->bullets[i].ent,&sta->enemies[k].ent)){
+                    // Reduce enemy's health by bullet's health and kill bullet
+                    sta->enemies[k].ent.hp -= sta->bullets[i].ent.hp;
+                    sta->bullets[i].ent.dead = 1;
+                }
             }
         }
     }
@@ -98,7 +203,7 @@ void state_update(level *lvl, state *sta){
     for(int i=0;i<sta->n_bullets;i++){
         int col = entity_physics(lvl,&sta->bullets[i].ent);
         // Kill bullet if it is colliding with a wall
-        if(col) sta->bullets[i].ent.dead = 1;
+        if(col && sta->bullets[i].weapon != 2) sta->bullets[i].ent.dead = 1;            //weapon 2 can pass over the walls
     }
 
 
